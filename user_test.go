@@ -233,8 +233,6 @@ func TestUsers_JWT(t *testing.T) {
 			"favorite_cake": "cheesecake",
 		}
 		params2 := map[string]interface{}{
-			"email":         "test@mail.com",
-			"password":      "somepass",
 			"favorite_cake": "newcakemufin",
 		}
 		doRequest(http.NewRequest(http.MethodPost, ts.URL+"/user/register", prepareParams(t, params)))
@@ -268,9 +266,7 @@ func TestUsers_JWT(t *testing.T) {
 			"favorite_cake": "cheesecake",
 		}
 		params2 := map[string]interface{}{
-			"email":         "test@mail.com",
-			"password":      "somenewpass",
-			"favorite_cake": "cheesecake",
+			"password": "somenewpass",
 		}
 		doRequest(http.NewRequest(http.MethodPost, ts.URL+"/user/register", prepareParams(t, params)))
 
@@ -303,9 +299,7 @@ func TestUsers_JWT(t *testing.T) {
 			"favorite_cake": "cheesecake",
 		}
 		params2 := map[string]interface{}{
-			"email":         "testnew@mail.com",
-			"password":      "somepass",
-			"favorite_cake": "cheesecake",
+			"email": "testnew@mail.com",
 		}
 		doRequest(http.NewRequest(http.MethodPost, ts.URL+"/user/register", prepareParams(t, params)))
 
@@ -335,7 +329,7 @@ func TestUsers_JWT(t *testing.T) {
 		}
 		resp := doRequest(http.NewRequest(http.MethodPost, ts.URL+"/user/register", prepareParams(t, params)))
 		assertStatus(t, 422, resp)
-		assertBody(t, "Password at least 8 symbols", resp)
+		assertBody(t, "password at least 8 symbols", resp)
 	})
 	t.Run("validation email register", func(t *testing.T) {
 		u := newTestUserService()
@@ -352,7 +346,7 @@ func TestUsers_JWT(t *testing.T) {
 		}
 		resp := doRequest(http.NewRequest(http.MethodPost, ts.URL+"/user/register", prepareParams(t, params)))
 		assertStatus(t, 422, resp)
-		assertBody(t, "The email field is required!", resp)
+		assertBody(t, "the email field is required", resp)
 	})
 	t.Run("validation email ", func(t *testing.T) {
 		u := newTestUserService()
@@ -369,7 +363,7 @@ func TestUsers_JWT(t *testing.T) {
 		}
 		resp := doRequest(http.NewRequest(http.MethodPost, ts.URL+"/user/register", prepareParams(t, params)))
 		assertStatus(t, 422, resp)
-		assertBody(t, "The email field should be a valid email address!", resp)
+		assertBody(t, "the email field have to be a valid email address", resp)
 	})
 	t.Run("validation cake register", func(t *testing.T) {
 		u := newTestUserService()
@@ -386,7 +380,7 @@ func TestUsers_JWT(t *testing.T) {
 		}
 		resp := doRequest(http.NewRequest(http.MethodPost, ts.URL+"/user/register", prepareParams(t, params)))
 		assertStatus(t, 422, resp)
-		assertBody(t, "Favorite cake should not be empty", resp)
+		assertBody(t, "favorite can't be empty", resp)
 	})
 	t.Run("validation cake alphabetic register", func(t *testing.T) {
 		u := newTestUserService()
@@ -403,7 +397,7 @@ func TestUsers_JWT(t *testing.T) {
 		}
 		resp := doRequest(http.NewRequest(http.MethodPost, ts.URL+"/user/register", prepareParams(t, params)))
 		assertStatus(t, 422, resp)
-		assertBody(t, "Favorite cake should be only alphabetic", resp)
+		assertBody(t, "favorite can be only alphabetic", resp)
 	})
 
 	t.Run("jwt key by uncorrect passwd", func(t *testing.T) {

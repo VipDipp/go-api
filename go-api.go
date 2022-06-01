@@ -39,7 +39,14 @@ func (uServ *UserService) addAdmin() error {
 	}
 	return nil
 }
+
+var JwtService, jwt_err = NewJWTService("pubkey.rsa", "privkey.rsa")
+
 func main() {
+	if jwt_err != nil {
+		panic(jwt_err)
+	}
+
 	os.Setenv("CAKE_ADMIN_EMAIL", "admin@mail.com")
 	os.Setenv("CAKE_ADMIN_PASSWORD", "adminadmin")
 
@@ -50,27 +57,24 @@ func main() {
 		repository: users,
 	}
 
-	jwtService, err := NewJWTService("pubkey.rsa", "privkey.rsa")
-	if err != nil {
-		panic(err)
-	}
+	r.HandleFunc("/admin/ban", logRequest(JwtService.jwtAuthAdmin(userService.repository, banUserHandler))).Methods(http.MethodPost)
+	r.HandleFunc("/admin/unban", logRequest(JwtService.jwtAuthAdmin(userService.repository, unbanUserHandler))).Methods(http.MethodPost)
+	r.HandleFunc("/admin/inspect", logRequest(JwtService.jwtAuthAdmin(userService.repository, inspectHandler))).Methods(http.MethodGet)
 
-	r.HandleFunc("/admin/ban", logRequest(jwtService.jwtAuthAdmin(userService.repository, banUserHandler))).Methods(http.MethodPost)
-	r.HandleFunc("/admin/unban", logRequest(jwtService.jwtAuthAdmin(userService.repository, unbanUserHandler))).Methods(http.MethodPost)
-	r.HandleFunc("/admin/inspect", logRequest(jwtService.jwtAuthAdmin(userService.repository, inspectHandler))).Methods(http.MethodGet)
-
-	r.HandleFunc("/cake", logRequest(jwtService.jwtAuth(users, getCakeHandler))).Methods(http.MethodGet)
 	r.HandleFunc("/user/register", logRequest(userService.Register)).Methods(http.MethodPost)
-	r.HandleFunc("/user/jwt", logRequest(wrapJwt(jwtService, userService.JWT))).Methods(http.MethodPost)
+	r.HandleFunc("/user/jwt", logRequest(wrapJwt(JwtService, userService.JWT))).Methods(http.MethodPost)
 
-	r.HandleFunc("/user/me", logRequest(jwtService.jwtAuth(users, getMeHandler))).Methods(http.MethodGet)
-	r.HandleFunc("/user/favorite_cake", logRequest(jwtService.jwtAuth(users, userService.updateCakeHandler))).Methods(http.MethodPost)
-	r.HandleFunc("/user/email", logRequest(jwtService.jwtAuth(users, userService.updateEmailHandler))).Methods(http.MethodPost)
-	r.HandleFunc("/user/password", logRequest(jwtService.jwtAuth(users, userService.updatePasswordHandler))).Methods(http.MethodPost)
+	r.HandleFunc("/user/me", logRequest(JwtService.jwtAuth(users, getMeHandler))).Methods(http.MethodGet)
+	r.HandleFunc("/user/my_cake", logRequest(JwtService.jwtAuth(users, getCakeHandler))).Methods(http.MethodGet)
+	r.HandleFunc("/user/my_email", logRequest(JwtService.jwtAuth(users, getEmailHandler))).Methods(http.MethodGet)
+
+	r.HandleFunc("/user/favorite_cake", logRequest(JwtService.jwtAuth(users, userService.updateCakeHandler))).Methods(http.MethodPut)
+	r.HandleFunc("/user/email", logRequest(JwtService.jwtAuth(users, userService.updateEmailHandler))).Methods(http.MethodPut)
+	r.HandleFunc("/user/password", logRequest(JwtService.jwtAuth(users, userService.updatePasswordHandler))).Methods(http.MethodPut)
 
 	userService.addAdmin()
 	srv := http.Server{
-		Addr:    ":8080",
+		Addr:    ":8085",
 		Handler: r,
 	}
 
@@ -83,8 +87,8 @@ func main() {
 		srv.Shutdown(ctx)
 	}()
 
-	log.Printf("Server stared, press cntrl + C to stop ")
-	err = srv.ListenAndServe()
+	log.Printf("Server started, press cntrl + C to stop ")
+	err := srv.ListenAndServe()
 	if err != nil {
 		log.Println("Server exited with error:", err)
 	}

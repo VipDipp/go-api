@@ -7,13 +7,13 @@ import (
 	"net/http"
 )
 
-func getCakeHandler(w http.ResponseWriter, r *http.Request, u User, users UserRepository) {
-	w.Write([]byte(u.FavoriteCake))
+func getMeHandler(w http.ResponseWriter, r *http.Request, u User, users UserRepository) {
+	w.Write([]byte(u.FavoriteCake + "\n"))
+	w.Write([]byte(u.Email))
 }
 
-func getMeHandler(w http.ResponseWriter, r *http.Request, u User, users UserRepository) {
+func getCakeHandler(w http.ResponseWriter, r *http.Request, u User, users UserRepository) {
 	w.Write([]byte(u.FavoriteCake))
-	w.Write([]byte(u.Email))
 }
 
 func getEmailHandler(w http.ResponseWriter, r *http.Request, u User, users UserRepository) {
@@ -23,26 +23,22 @@ func getEmailHandler(w http.ResponseWriter, r *http.Request, u User, users UserR
 func (uServ UserService) updateCakeHandler(w http.ResponseWriter, r *http.Request, u User, users UserRepository) {
 	params := &UserRegisterParams{}
 	err := json.NewDecoder(r.Body).Decode(params)
-
 	if err != nil {
 		handleError(errors.New("could not read params"), w)
 		return
 	}
-
-	if err := validateRegisterParams(params); err != nil {
+	if err := validateCake(params); err != nil {
 		handleError(err, w)
 		return
 	}
-
-	passwordDigest := md5.New().Sum([]byte(params.Password))
-
-	newCake := User{
-		Email:          params.Email,
-		PasswordDigest: string(passwordDigest),
-		FavoriteCake:   params.FavoriteCake,
+	jwtAuth, _ := JwtService.getJWT(w, r)
+	newCake, err := users.Get(jwtAuth.Email)
+	if err != nil {
+		handleError(err, w)
+		return
 	}
-
-	err = uServ.repository.Update(params.Email, newCake)
+	newCake.FavoriteCake = params.FavoriteCake
+	err = uServ.repository.Update(jwtAuth.Email, newCake)
 	if err != nil {
 		handleError(err, w)
 		return
@@ -60,24 +56,20 @@ func (uServ UserService) updateEmailHandler(w http.ResponseWriter, r *http.Reque
 		handleError(errors.New("could not read params"), w)
 		return
 	}
-
-	if err := validateRegisterParams(params); err != nil {
+	if err := validateEmail(params); err != nil {
 		handleError(err, w)
 		return
 	}
 
-	passwordDigest := md5.New().Sum([]byte(params.Password))
-	email := params.Email
-
-	newEmail := User{
-		Email:          email,
-		PasswordDigest: string(passwordDigest),
-		FavoriteCake:   params.FavoriteCake,
+	jwtAuth, _ := JwtService.getJWT(w, r)
+	newEmail, err := users.Get(jwtAuth.Email)
+	if err != nil {
+		handleError(err, w)
+		return
 	}
-
+	newEmail.Email = params.Email
 	uServ.repository.Delete(u.Email)
-	err = uServ.repository.Add(email, newEmail)
-
+	uServ.repository.Add(params.Email, newEmail)
 	if err != nil {
 		handleError(err, w)
 		return
@@ -95,20 +87,20 @@ func (uServ UserService) updatePasswordHandler(w http.ResponseWriter, r *http.Re
 		handleError(errors.New("could not read params"), w)
 		return
 	}
-
-	if err := validateRegisterParams(params); err != nil {
+	if err := validatePassword(params); err != nil {
 		handleError(err, w)
 		return
 	}
 
-	passwordDigest := md5.New().Sum([]byte(params.Password))
-	newCake := User{
-		Email:          params.Email,
-		PasswordDigest: string(passwordDigest),
-		FavoriteCake:   params.FavoriteCake,
+	jwtAuth, _ := JwtService.getJWT(w, r)
+	newPass, err := users.Get(jwtAuth.Email)
+	if err != nil {
+		handleError(err, w)
+		return
 	}
+	newPass.PasswordDigest = string(md5.New().Sum([]byte(params.Password)))
 
-	err = uServ.repository.Update(params.Email, newCake)
+	err = uServ.repository.Update(jwtAuth.Email, newPass)
 	if err != nil {
 		handleError(err, w)
 		return

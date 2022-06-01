@@ -60,7 +60,7 @@ func TestUser_repository(t *testing.T) {
 		if ok2 != nil {
 			t.Error("you can`t update user by this email ")
 		}
-		ok2 = users.Update("gmail.com", user3)
+		_ = users.Update("gmail.com", user3)
 	})
 	t.Run("get user", func(t *testing.T) {
 		users := NewInMemoryUserStorage()

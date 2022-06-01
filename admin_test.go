@@ -162,16 +162,16 @@ func TestAdmin_JWT(t *testing.T) {
 
 		banReq, _ := http.NewRequest(http.MethodPost, ts2.URL+"/admin/ban", prepareParams(t, banParams))
 		banReq.Header.Set("Authorization", "Bearer "+string(adminJwt))
-		banTime := time.Now().Format("30 October 2022 23:00:00")
+		banTime := time.Now().Format(time.UnixDate)
 		doRequest(banReq, nil)
 		banStr := "-- was banned (reason: making mess) at " + banTime + " by test@mail.com" + "\n"
 
 		unbanParams := map[string]interface{}{
 			"email": "test@mail.com",
 		}
+		unbanTime := time.Now().Format(time.UnixDate)
 		unbanReq, _ := http.NewRequest(http.MethodPost, ts3.URL+"/admin/unban", prepareParams(t, unbanParams))
 		unbanReq.Header.Set("Authorization", "Bearer "+string(adminJwt))
-		unbanTime := time.Now().Format("30 October 2022 23:00:00")
 		doRequest(unbanReq, nil)
 		unbanStr := "-- was unbanned at " + unbanTime + " by " +
 			os.Getenv("CAKE_ADMIN_EMAIL") + "\n"
